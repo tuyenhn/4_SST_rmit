@@ -554,8 +554,8 @@ class SimplexNoise {
     }
 
     void draw() {
-        // a new parameter set every 5 seconds
-        EVERY_N_SECONDS(5) {
+        // a new parameter set every 2 seconds
+        EVERY_N_SECONDS(2) {
             noise_x = random16();
             noise_y = random16();
             noise_z = random16();

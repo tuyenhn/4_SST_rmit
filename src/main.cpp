@@ -18,46 +18,47 @@ void setup() {
 int pattern_it = 1;
 
 void loop() {
-    // EVERY_N_SECONDS(15) {
-    //     pattern_it++;
+    EVERY_N_SECONDS(15) {
+        pattern_it++;
 
-    //     if (pattern_it > 8) pattern_it = 1;
+        if (pattern_it > 9) pattern_it = 1;
 
-    //     if (pattern_it == 1) {
-    //         FastLED.clear();
-    //         FastLED.show();
-    //     } else if (pattern_it == 8)
-    //         rainbowFlow.y = 0;
-    // }
+        if (pattern_it == 1) {
+            FastLED.clear();
+            FastLED.show();
+        } else if (pattern_it == 9)
+            rainbowFlow.y = 0;
+    }
 
-    // switch (pattern_it) {
-    //     case 1:
-    //         snake.draw();
-    //         break;
-    //     case 2:
-    //         text.draw();
-    //         break;
-    //     case 3:
-    //         fireworks.draw();
-    //         break;
-    //     case 4:
-    //         spiral.draw();
-    //         break;
-    //     case 5:
-    //         munch.draw();
-    //         break;
-    //     case 6:
-    //         plasma.draw();
-    //         break;
-    //     case 7:
-    //         pulse.draw();
-    //         break;
-    //     case 8:
-    //         rainbowFlow.draw();
-    //         break;
-    // }
-
-    simplex.draw();
+    switch (pattern_it) {
+        case 1:
+            snake.draw();
+            break;
+        case 2:
+            text.draw();
+            break;
+        case 3:
+            fireworks.draw();
+            break;
+        case 4:
+            spiral.draw();
+            break;
+        case 5:
+            munch.draw();
+            break;
+        case 6:
+            plasma.draw();
+            break;
+        case 7:
+            pulse.draw();
+            break;
+        case 8:
+            rainbowFlow.draw();
+            break;
+        case 9:
+            simplex.draw();
+            break;
+    }
 
     FastLED.setBrightness(brightness);
     FastLED.show();
