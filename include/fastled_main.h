@@ -15,8 +15,8 @@
     }
 #define NUM_LEDS 3163
 
-const uint8_t mWidth = 152;
-const uint8_t mHeight = 37;
+const uint8_t MWIDTH = 152;
+const uint8_t MHEIGHT = 37;
 const uint8_t brightness = 50;
 uint8_t rotation = 0;
 
@@ -25,15 +25,15 @@ CRGB* const leds(leds_plus_safety_pixel + 1);
 
 void fadeall(uint8_t scale) {
     for (int i = 0; i < NUM_LEDS; i++) leds[i].nscale8(scale);
-};
+}
 
 inline uint16_t XYsafe(uint16_t x, uint16_t y) {
     if (x < 1 || x > 151)
         return -1;
     if (-1 < y && y < 21)
-        return topArr[x + y * mWidth];
+        return topArr[x + y * MWIDTH];
     else if (20 < y && y < 37)
-        return btmArr[x + (y - 21) * mWidth];
+        return btmArr[x + (y - 21) * MWIDTH];
     else
         return -1;
 }
@@ -130,16 +130,16 @@ uint32_t noise_z;
 uint32_t noise_scale_x;
 uint32_t noise_scale_y;
 
-uint8_t noise[mWidth][mHeight];
+uint8_t noise[MWIDTH][MHEIGHT];
 uint8_t noisesmoothing;
 
 CRGB leds2[NUM_LEDS];
 
 void FillNoise() {
-    for (uint8_t i = 0; i < mWidth; i++) {
+    for (uint8_t i = 0; i < MWIDTH; i++) {
         uint32_t ioffset = noise_scale_x * (i - 17);
 
-        for (uint8_t j = 0; j < mHeight; j++) {
+        for (uint8_t j = 0; j < MHEIGHT; j++) {
             uint32_t joffset = noise_scale_y * (j - 17);
 
             byte data = inoise16(noise_x + ioffset, noise_y + joffset, noise_z) >> 8;
@@ -164,44 +164,44 @@ void Caleidoscope3() {
 void Caleidoscope1() {
     for (int x = 0; x < 75; x++) {
         for (int y = 0; y < 18; y++) {
-            leds[XYsafe(mWidth - 1 - x, y)] = leds[XYsafe(x, y)];
-            leds[XYsafe(mWidth - 1 - x, mHeight - 1 - y)] = leds[XYsafe(x, y)];
-            leds[XYsafe(x, mHeight - 1 - y)] = leds[XYsafe(x, y)];
+            leds[XYsafe(MWIDTH - 1 - x, y)] = leds[XYsafe(x, y)];
+            leds[XYsafe(MWIDTH - 1 - x, MHEIGHT - 1 - y)] = leds[XYsafe(x, y)];
+            leds[XYsafe(x, MHEIGHT - 1 - y)] = leds[XYsafe(x, y)];
         }
     }
 }
 
 void MoveX(byte delta) {
-    for (int y = 0; y < mHeight; y++) {
-        for (int x = 0; x < mWidth - delta; x++) {
+    for (int y = 0; y < MHEIGHT; y++) {
+        for (int x = 0; x < MWIDTH - delta; x++) {
             leds2[XYsafe(x, y)] = leds[XYsafe(x + delta, y)];
         }
-        for (int x = mWidth - delta; x < mWidth; x++) {
-            leds2[XYsafe(x, y)] = leds[XYsafe(x + delta - mWidth, y)];
+        for (int x = MWIDTH - delta; x < MWIDTH; x++) {
+            leds2[XYsafe(x, y)] = leds[XYsafe(x + delta - MWIDTH, y)];
         }
     }
 
     // write back to leds
-    for (uint16_t y = 0; y < mHeight; y++) {
-        for (uint16_t x = 0; x < mWidth; x++) {
+    for (uint16_t y = 0; y < MHEIGHT; y++) {
+        for (uint16_t x = 0; x < MWIDTH; x++) {
             leds[XYsafe(x, y)] = leds2[XYsafe(x, y)];
         }
     }
 }
 
 void MoveY(byte delta) {
-    for (int x = 0; x < mWidth; x++) {
-        for (int y = 0; y < mHeight - delta; y++) {
+    for (int x = 0; x < MWIDTH; x++) {
+        for (int y = 0; y < MHEIGHT - delta; y++) {
             leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta)];
         }
-        for (int y = mHeight - delta; y < mHeight; y++) {
-            leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta - mHeight)];
+        for (int y = MHEIGHT - delta; y < MHEIGHT; y++) {
+            leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta - MHEIGHT)];
         }
     }
 
     // write back to leds
-    for (uint16_t y = 0; y < mHeight; y++) {
-        for (uint16_t x = 0; x < mWidth; x++) {
+    for (uint16_t y = 0; y < MHEIGHT; y++) {
+        for (uint16_t x = 0; x < MWIDTH; x++) {
             leds[XYsafe(x, y)] = leds2[XYsafe(x, y)];
         }
     }
@@ -209,30 +209,30 @@ void MoveY(byte delta) {
 
 void MoveFractionalNoiseX(byte amt = 16) {
     // move delta pixelwise
-    for (int y = 0; y < mHeight; y++) {
+    for (int y = 0; y < MHEIGHT; y++) {
         uint16_t amount = noise[0][y] * amt;
         byte delta = 31 - (amount / 256);
 
-        for (int x = 0; x < mWidth - delta; x++) {
+        for (int x = 0; x < MWIDTH - delta; x++) {
             leds2[XYsafe(x, y)] = leds[XYsafe(x + delta, y)];
         }
-        for (int x = mWidth - delta; x < mWidth; x++) {
-            leds2[XYsafe(x, y)] = leds[XYsafe(x + delta - mWidth, y)];
+        for (int x = MWIDTH - delta; x < MWIDTH; x++) {
+            leds2[XYsafe(x, y)] = leds[XYsafe(x + delta - MWIDTH, y)];
         }
     }
 }
 
 void MoveFractionalNoiseY(byte amt = 16) {
     // move delta pixelwise
-    for (int x = 0; x < mWidth; x++) {
+    for (int x = 0; x < MWIDTH; x++) {
         uint16_t amount = noise[x][0] * amt;
         byte delta = 31 - (amount / 256);
 
-        for (int y = 0; y < mWidth - delta; y++) {
+        for (int y = 0; y < MWIDTH - delta; y++) {
             leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta)];
         }
-        for (int y = mWidth - delta; y < mWidth; y++) {
-            leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta - mWidth)];
+        for (int y = MWIDTH - delta; y < MWIDTH; y++) {
+            leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta - MWIDTH)];
         }
     }
 }
@@ -252,7 +252,7 @@ void standardNoiseSmearing() {
 }
 
 void drawPixel(int16_t x, int16_t y, CRGB color) {
-    if ((x < 1) || (y < 0) || (x > mWidth) || (y >= mHeight)) return;
+    if ((x < 1) || (y < 0) || (x > MWIDTH) || (y >= MHEIGHT)) return;
     leds[XYsafe(x, y)] = color;
 }
 

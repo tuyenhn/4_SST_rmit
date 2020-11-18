@@ -61,19 +61,19 @@ class Drift : protected PaletteCtrl {
         uint8_t dim = beatsin8(2, 170, 250);
         fadeall(dim);
 
-        for (uint8_t i = 0; i < mWidth; i++) {
+        for (uint8_t i = 0; i < MWIDTH; i++) {
             CRGB color;
 
             uint8_t x = 0;
             uint8_t y = 0;
 
             if (i < 75) {
-                x = beatcos8((i + 1) * 2, i, mWidth - i);
-                y = beatsin8((i + 1) * 2, i, mHeight - i);
+                x = beatcos8((i + 1) * 2, i, MWIDTH - i);
+                y = beatsin8((i + 1) * 2, i, MHEIGHT - i);
                 color = ColorFromPalette(curPalette, i * 14);
             } else {
-                x = beatsin8((mWidth - i) * 2, mWidth - i, i + 1);
-                y = beatcos8((mHeight - i) * 2, mHeight - i, i + 1);
+                x = beatsin8((MWIDTH - i) * 2, MWIDTH - i, i + 1);
+                y = beatcos8((MHEIGHT - i) * 2, MHEIGHT - i, i + 1);
                 color = ColorFromPalette(curPalette, (31 - i) * 14);
             }
 
@@ -89,9 +89,9 @@ class Pendulum : private PaletteCtrl {
     void draw() {
         fadeall(170);
 
-        for (int x = 0; x < mWidth; x++) {
-            //uint8_t y = beatsin8(x + mWidth, 0, mHeight);
-            uint8_t y = beatsin8(x + 1, 0, mHeight);
+        for (int x = 0; x < MWIDTH; x++) {
+            //uint8_t y = beatsin8(x + MWIDTH, 0, MHEIGHT);
+            uint8_t y = beatsin8(x + 1, 0, MHEIGHT);
 
             CRGB color = ColorFromPalette(curPalette, x * 7, 255);
             drawPixel(x, y, color);
@@ -141,13 +141,13 @@ class Spiral : private PaletteCtrl {
 
         multiTimer[0].lastMillis = now;
         multiTimer[0].takt = 42;  //x1
-        multiTimer[0].up = mWidth - 1;
+        multiTimer[0].up = MWIDTH - 1;
         multiTimer[0].down = 0;
         multiTimer[0].count = 0;
 
         multiTimer[1].lastMillis = now;
         multiTimer[1].takt = 55;  //y1
-        multiTimer[1].up = mHeight - 1;
+        multiTimer[1].up = MHEIGHT - 1;
         multiTimer[1].down = 0;
         multiTimer[1].count = 0;
 
@@ -159,13 +159,13 @@ class Spiral : private PaletteCtrl {
 
         multiTimer[3].lastMillis = now;
         multiTimer[3].takt = 71;  //x2
-        multiTimer[3].up = mWidth - 1;
+        multiTimer[3].up = MWIDTH - 1;
         multiTimer[3].down = 0;
         multiTimer[3].count = 0;
 
         multiTimer[4].lastMillis = now;
         multiTimer[4].takt = 89;  //y2
-        multiTimer[4].up = mHeight - 1;
+        multiTimer[4].up = MHEIGHT - 1;
         multiTimer[4].down = 0;
         multiTimer[4].count = 0;
     }
@@ -201,10 +201,10 @@ class Wave : private PaletteCtrl {
     byte hueUpdateFrequency = 0;
     byte hue = 0;
 
-    uint8_t scale = 256 / mWidth;
+    uint8_t scale = 256 / MWIDTH;
 
-    uint8_t maxX = mWidth - 1;
-    uint8_t maxY = mHeight - 1;
+    uint8_t maxX = MWIDTH - 1;
+    uint8_t maxY = MHEIGHT - 1;
 
     uint8_t waveCount = 1;
 
@@ -212,7 +212,7 @@ class Wave : private PaletteCtrl {
     void draw() {
         int n = 0;
 
-        for (int x = 0; x < mWidth; x++) {
+        for (int x = 0; x < MWIDTH; x++) {
             n = quadwave8(x * 2 + theta) / scale;
             CRGB color = ColorFromPalette(curPalette, x + hue, 150);
             drawPixel(x, n, color);
@@ -297,8 +297,8 @@ class Mandala : private PaletteCtrl {
 
     // show just one layer
     void ShowNoiseLayer(byte layer, byte colorrepeat, byte colorshift) {
-        for (uint8_t i = 0; i < mWidth; i++) {
-            for (uint8_t j = 0; j < mHeight; j++) {
+        for (uint8_t i = 0; i < MWIDTH; i++) {
+            for (uint8_t j = 0; j < MHEIGHT; j++) {
                 uint8_t color = noise[i][j];
 
                 uint8_t bri = color;
@@ -321,8 +321,8 @@ class Plasma {
 
    public:
     void draw() {
-        for (int x = 0; x < mWidth; x++) {
-            for (int y = 0; y < mHeight; y++) {
+        for (int x = 0; x < MWIDTH; x++) {
+            for (int y = 0; y < MHEIGHT; y++) {
                 int16_t v = 0;
                 uint8_t wibble = sin8(time);
                 v += sin16(x * wibble * 2 + time);
@@ -362,8 +362,8 @@ class Pulse {
         fadeall(235);
 
         if (step == -1) {
-            centerX = random(mWidth);
-            centerY = random(mHeight);
+            centerX = random(MWIDTH);
+            centerY = random(MHEIGHT);
             hue = random(256);  // 170;
             step = 0;
         }
@@ -412,15 +412,15 @@ class Munch {
 
    public:
     void draw() {
-        for (byte x = 0; x < mWidth; x++) {
-            for (byte y = 0; y < mHeight; y++) {
+        for (byte x = 0; x < MWIDTH; x++) {
+            for (byte y = 0; y < MHEIGHT; y++) {
                 leds[XYsafe(x, y)] = (x ^ y ^ flip) < count ? ColorFromPalette(pal, ((x ^ y) << 3) + generation, 50) : CRGB::Black;
             }
         }
 
         count += dir;
 
-        if (count <= 0 || count >= mWidth) {
+        if (count <= 0 || count >= MWIDTH) {
             dir = -dir;
         }
 
@@ -440,7 +440,7 @@ Munch munch;
 class PatternSnake {
    private:
     CRGBPalette16 pal = ForestColors_p;
-    static const byte SNAKE_LENGTH = mWidth / 2;
+    static const byte SNAKE_LENGTH = MWIDTH / 2;
 
     CRGB colors[SNAKE_LENGTH];
     uint8_t initialHue;
@@ -495,16 +495,16 @@ class PatternSnake {
         void move() {
             switch (direction) {
                 case UP:
-                    pixels[0].y = (pixels[0].y + 1) % mHeight;
+                    pixels[0].y = (pixels[0].y + 1) % MHEIGHT;
                     break;
                 case LEFT:
-                    pixels[0].x = (pixels[0].x + 1) % mWidth;
+                    pixels[0].x = (pixels[0].x + 1) % MWIDTH;
                     break;
                 case DOWN:
-                    pixels[0].y = pixels[0].y == 0 ? mHeight - 1 : pixels[0].y - 1;
+                    pixels[0].y = pixels[0].y == 0 ? MHEIGHT - 1 : pixels[0].y - 1;
                     break;
                 case RIGHT:
-                    pixels[0].x = pixels[0].x == 0 ? mWidth - 1 : pixels[0].x - 1;
+                    pixels[0].x = pixels[0].x == 0 ? MWIDTH - 1 : pixels[0].x - 1;
                     break;
             }
         }
@@ -516,7 +516,7 @@ class PatternSnake {
         }
     };
 
-    static const int snakeCount = mWidth / 4;
+    static const int snakeCount = MWIDTH / 4;
     Snake snakes[snakeCount];
 
    public:
@@ -573,8 +573,8 @@ class SimplexNoise {
 
     // show just one layer
     void ShowNoiseLayer(byte layer, byte colorrepeat, byte colorshift) {
-        for (uint8_t i = 0; i < mWidth; i++) {
-            for (uint8_t j = 0; j < mHeight; j++) {
+        for (uint8_t i = 0; i < MWIDTH; i++) {
+            for (uint8_t j = 0; j < MHEIGHT; j++) {
                 uint8_t pixel = noise[i][j];
 
                 // assign a color depending on the actual palette
@@ -783,16 +783,16 @@ PalleteCrossfade palCrossfade;
 class FirePlace {
    private:
     const unsigned int HOT = 400;
-    const unsigned int MAXHOT = (HOT * mHeight);
+    const unsigned int MAXHOT = (HOT * MHEIGHT);
     const unsigned int COOLING = 80;
 
    public:
     void draw() {
-        static unsigned int spark[mWidth] = {0};  // base heat
-        CRGB stack[mWidth][mHeight] = {0};        // stacks that are cooler
+        static unsigned int spark[MWIDTH] = {0};  // base heat
+        CRGB stack[MWIDTH][MHEIGHT] = {0};        // stacks that are cooler
 
         // 1. Generate sparks to re-heat
-        for (int i = 0; i < mWidth; i++) {
+        for (int i = 0; i < MWIDTH; i++) {
             if (spark[i] < HOT) {
                 int base = HOT * 2;
                 spark[i] = random16(base, MAXHOT);
@@ -800,16 +800,16 @@ class FirePlace {
         }
 
         // 2. Cool all the sparks
-        for (int i = 0; i < mWidth; i++) {
+        for (int i = 0; i < MWIDTH; i++) {
             spark[i] = qsub8(spark[i], random8(0, COOLING));
         }
 
         // 3. Build the stack
         /*    This works on the idea that pixels are "cooler"
         as they get further from the spark at the bottom */
-        for (int i = 0; i < mWidth; i++) {
+        for (int i = 0; i < MWIDTH; i++) {
             unsigned int heat = constrain(spark[i], HOT / 2, MAXHOT);
-            for (int j = mHeight - 1; j >= 0; j--) {
+            for (int j = MHEIGHT - 1; j >= 0; j--) {
                 /* Calculate the color on the palette from how hot this pixel is */
                 byte index = constrain(heat, 0, HOT);
                 stack[i][j] = ColorFromPalette(HeatColors_p, index);
@@ -826,8 +826,8 @@ class FirePlace {
         }
 
         // 4. map stacks to led array
-        for (int i = 0; i < mWidth; i++) {
-            for (int j = 0; j < mHeight; j++) {
+        for (int i = 0; i < MWIDTH; i++) {
+            for (int j = 0; j < MHEIGHT; j++) {
                 leds[XYsafe(i, j)] = stack[i][j];
             }
         }
@@ -846,7 +846,7 @@ class Fireworks {
         uint8_t rad = random8(10, 30);
         CHSV col = CHSV(random8(), 255, 255);
 
-        for (int y = mHeight; y > orig_y; y--) {
+        for (int y = MHEIGHT; y > orig_y; y--) {
             leds[XYsafe(orig_x, y)] = col;
             FastLED.show();
             fadeall(190);
@@ -892,9 +892,9 @@ class RainbowFlow {
    public:
     uint8_t y = 0;
     void draw() {
-        drawFastHLine(0, y++, mWidth, CHSV(hue++, 255, 255));
+        drawFastHLine(0, y++, MWIDTH, CHSV(hue++, 255, 255));
         if (hue > 255) hue = 0;
-        if (y > mHeight) y = 0;
+        if (y > MHEIGHT) y = 0;
         fadeall(220);
     }
 };
@@ -940,11 +940,11 @@ class ScrollingText {
 
     void fillBG() {
         for (int y = 25; y > 0; y--) {
-            drawFastHLine(0, 25 - y, mWidth, bg_color);
-            drawFastHLine(0, 25 + y, mWidth, bg_color);
+            drawFastHLine(0, 25 - y, MWIDTH, bg_color);
+            drawFastHLine(0, 25 + y, MWIDTH, bg_color);
             fadeall(230);
         }
-        drawFastHLine(0, 25, mWidth, bg_color);
+        drawFastHLine(0, 25, MWIDTH, bg_color);
     }
 };
 

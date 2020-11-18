@@ -15,18 +15,19 @@ void setup() {
     palCtrl.loadPalette(0);
 }
 
-int pattern_it = 1;
+byte pattern_it = 1;
+byte pattern_sz = 9;
 
 void loop() {
     EVERY_N_SECONDS(15) {
         pattern_it++;
 
-        if (pattern_it > 9) pattern_it = 1;
+        if (pattern_it > pattern_sz) pattern_it = 1;
 
         if (pattern_it == 1) {
             FastLED.clear();
             FastLED.show();
-        } else if (pattern_it == 9)
+        } else if (pattern_it == 8)
             rainbowFlow.y = 0;
     }
 
