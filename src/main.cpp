@@ -12,7 +12,8 @@ void setup() {
     mandala.start();
     simplex.start();
 
-    palCtrl.loadPalette(0);
+    PaletteCtrl::palIndex = 0;
+    PaletteCtrl::loadPalette(0);
 }
 
 byte pattern_it = 1;

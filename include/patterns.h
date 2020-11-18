@@ -10,12 +10,11 @@ const CRGBPalette16 GrayscaleColors_p = CRGBPalette16(CRGB::Black, CRGB::White);
 const CRGBPalette16 IceColors_p = CRGBPalette16(CRGB::Black, CRGB::Blue, CRGB::Aqua, CRGB::White);
 
 class PaletteCtrl {
-   protected:
-    CRGBPalette16 curPalette;
-    uint8_t palIndex = 0;
-
    public:
-    void loadPalette(uint8_t idx) {
+    static CRGBPalette16 curPalette;
+    static uint8_t palIndex;
+
+    static void loadPalette(uint8_t idx) {
         switch (idx) {
             case 0:
                 curPalette = RainbowColors_p;
@@ -47,15 +46,13 @@ class PaletteCtrl {
         }
     }
 
-    void cyclePalette() {
+    static void cyclePalette() {
         if (palIndex > 8) palIndex = 0;
         loadPalette(palIndex++);
     }
 };
 
-PaletteCtrl palCtrl;
-
-class Drift : protected PaletteCtrl {
+class Drift {
    public:
     void draw() {
         uint8_t dim = beatsin8(2, 170, 250);
@@ -70,11 +67,11 @@ class Drift : protected PaletteCtrl {
             if (i < 75) {
                 x = beatcos8((i + 1) * 2, i, MWIDTH - i);
                 y = beatsin8((i + 1) * 2, i, MHEIGHT - i);
-                color = ColorFromPalette(curPalette, i * 14);
+                color = ColorFromPalette(PaletteCtrl::curPalette, i * 14);
             } else {
                 x = beatsin8((MWIDTH - i) * 2, MWIDTH - i, i + 1);
                 y = beatcos8((MHEIGHT - i) * 2, MHEIGHT - i, i + 1);
-                color = ColorFromPalette(curPalette, (31 - i) * 14);
+                color = ColorFromPalette(PaletteCtrl::curPalette, (31 - i) * 14);
             }
 
             drawPixel(x, y, color);
@@ -84,7 +81,7 @@ class Drift : protected PaletteCtrl {
 
 Drift drift;
 
-class Pendulum : private PaletteCtrl {
+class Pendulum {
    public:
     void draw() {
         fadeall(170);
@@ -93,7 +90,7 @@ class Pendulum : private PaletteCtrl {
             //uint8_t y = beatsin8(x + MWIDTH, 0, MHEIGHT);
             uint8_t y = beatsin8(x + 1, 0, MHEIGHT);
 
-            CRGB color = ColorFromPalette(curPalette, x * 7, 255);
+            CRGB color = ColorFromPalette(PaletteCtrl::curPalette, x * 7, 255);
             drawPixel(x, y, color);
         }
     }
@@ -101,7 +98,7 @@ class Pendulum : private PaletteCtrl {
 
 Pendulum pendulum;
 
-class Spiral : private PaletteCtrl {
+class Spiral {
    private:
     // Timer stuff (Oszillators)
     struct timer {
@@ -191,7 +188,7 @@ class Spiral : private PaletteCtrl {
 
 Spiral spiral;
 
-class Wave : private PaletteCtrl {
+class Wave {
    private:
     byte thetaUpdate = 0;
     byte thetaUpdateFrequency = 0;
@@ -214,7 +211,7 @@ class Wave : private PaletteCtrl {
 
         for (int x = 0; x < MWIDTH; x++) {
             n = quadwave8(x * 2 + theta) / scale;
-            CRGB color = ColorFromPalette(curPalette, x + hue, 150);
+            CRGB color = ColorFromPalette(PaletteCtrl::curPalette, x + hue, 150);
             drawPixel(x, n, color);
             if (waveCount == 2)
                 drawPixel(x, maxY - n, color);
@@ -240,7 +237,7 @@ class Wave : private PaletteCtrl {
 
 Wave wave;
 
-class Mandala : private PaletteCtrl {
+class Mandala {
    private:
     // used for the random based animations
     int16_t dx;
@@ -304,7 +301,7 @@ class Mandala : private PaletteCtrl {
                 uint8_t bri = color;
 
                 // assign a color depending on the actual palette
-                CRGB pixel = ColorFromPalette(curPalette, colorrepeat * (color + colorshift), bri);
+                CRGB pixel = ColorFromPalette(PaletteCtrl::curPalette, colorrepeat * (color + colorshift), bri);
                 leds[XYsafe(i, j)] = pixel;
             }
         }
