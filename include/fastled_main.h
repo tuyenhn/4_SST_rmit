@@ -3,8 +3,6 @@
 
 #include <FastLED.h>
 
-#include <cmath>
-
 #include "matrix_mapping.h"
 
 #define xorswap(a, b) \
