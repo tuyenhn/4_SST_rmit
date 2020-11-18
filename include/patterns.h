@@ -647,36 +647,9 @@ SimplexNoise simplex;
 
 // HEAVILY DERIVED FROM https://github.com/atuline/FastLED-Demos
 
-class Pattern {
-   protected:
-    CRGBPalette16 currentPalette;
-    CRGBPalette16 targetPalette;
-    TBlendType currentBlending;
-
-   public:
-    CRGBPalette16 &getCurPalette() {
-        return this->currentPalette;
-    };
-
-    CRGBPalette16 &getTargetPalette() {
-        return this->targetPalette;
-    };
-
-    void setCurPalette(CRGBPalette16 palette) {
-        this->currentPalette = palette;
-    };
-
-    void setTargetPalette(CRGBPalette16 palette) {
-        this->currentPalette = palette;
-    };
-
-    void setBlendType(TBlendType type) {
-        this->currentBlending = type;
-    }
-};
-
-class Serendipitous : public Pattern {
+class Serendipitous {
    private:
+    CRGBPalette16 targetPalette;
     uint8_t maxChanges = 24;  // Value for blending between palettes.
 
     uint16_t Xorig = 0x012;
@@ -685,13 +658,17 @@ class Serendipitous : public Pattern {
     uint16_t Y;
     uint16_t Xn;
     uint16_t Yn;
-    uint8_t idx;
+    uint8_t index;
 
    public:
     void serendipitous() {
         EVERY_N_SECONDS(5) {
             uint8_t baseC = random8();
-            targetPalette = CRGBPalette16(CHSV(baseC - 3, 255, random8(192, 255)), CHSV(baseC + 2, 255, random8(192, 255)), CHSV(baseC + 5, 192, random8(192, 255)), CHSV(random8(), 255, random8(192, 255)));
+            targetPalette = CRGBPalette16(
+                CHSV(baseC - 3, 255, random8(192, 255)),
+                CHSV(baseC + 2, 255, random8(192, 255)),
+                CHSV(baseC + 5, 192, random8(192, 255)),
+                CHSV(random8(), 255, random8(192, 255)));
 
             X = Xorig;
             Y = Yorig;
@@ -707,9 +684,9 @@ class Serendipitous : public Pattern {
         X = Xn;
         Y = Yn;
 
-        idx = (sin8(X) + cos8(Y)) / 2;  // Guarantees maximum value of 255
+        index = (sin8(X) + cos8(Y)) / 2;  // Guarantees maximum value of 255
 
-        CRGB newcolor = ColorFromPalette(currentPalette, idx, 255, LINEARBLEND);
+        CRGB newcolor = ColorFromPalette(PaletteCtrl::curPalette, index, 255, LINEARBLEND);
 
         //  nblend(leds[X%NUM_LEDS-1], newcolor, 224);          // Try and smooth it out a bit. Higher # means less smoothing.
         nblend(leds[map(X, 0, 65535, 0, NUM_LEDS)], newcolor, 224);       // Try and smooth it out a bit. Higher # means less smoothing.
@@ -723,7 +700,7 @@ class Serendipitous : public Pattern {
 
     void draw() {
         EVERY_N_MILLISECONDS(60) {
-            nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);  // Blend towards the target palette
+            nblendPaletteTowardPalette(PaletteCtrl::curPalette, targetPalette, maxChanges);  // Blend towards the target palette
         }
         EVERY_N_MILLISECONDS(50) {
             serendipitous();
@@ -733,24 +710,17 @@ class Serendipitous : public Pattern {
 
 Serendipitous seren;
 
-class FadeIn : public Pattern {
+class FadeIn {
+   private:
+    CRGBPalette16 currentPalette = PartyColors_p;
+    CRGBPalette16 targetPalette;
+    TBlendType currentBlending = LINEARBLEND;
+
    public:
-    void fadein() {
-        random16_set_seed(535);  // The randomizer needs to be re-set each time through the loop in order for the 'random' numbers to be the same each time through.
-
-        for (int i = 0; i < NUM_LEDS; i++) {
-            uint8_t fader = sin8(millis() / random8(10, 20));                                        // The random number for each 'i' will be the same every time.
-            leds[i] = ColorFromPalette(this->currentPalette, i * 20, fader, this->currentBlending);  // Now, let's run it through the palette lookup.
-        }
-
-        random16_set_seed(millis());  // Re-randomizing the random number seed for other routines.
-
-    }  // fadein()
-
     void draw() {
         EVERY_N_MILLISECONDS(100) {  // FastLED based non-blocking FIXED delay.
             uint8_t maxChanges = 24;
-            nblendPaletteTowardPalette(this->currentPalette, this->targetPalette, maxChanges);  // AWESOME palette blending capability.
+            nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);  // AWESOME palette blending capability.
         }
 
         EVERY_N_SECONDS(5) {               // Change the target palette to a random one every 5 seconds.
@@ -758,84 +728,41 @@ class FadeIn : public Pattern {
             targetPalette = CRGBPalette16(CHSV(baseC + random8(0, 32), 255, random8(128, 255)), CHSV(baseC + random8(0, 32), 255, random8(128, 255)), CHSV(baseC + random8(0, 32), 192, random8(128, 255)), CHSV(baseC + random8(0, 32), 255, random8(128, 255)));
         }
 
-        this->fadein();
+        fadein();
     }
+
+    void fadein() {
+        random16_set_seed(535);  // The randomizer needs to be re-set each time through the loop in order for the 'random' numbers to be the same each time through.
+
+        for (int i = 0; i < NUM_LEDS; i++) {
+            uint8_t fader = sin8(millis() / random8(10, 20));                            // The random number for each 'i' will be the same every time.
+            leds[i] = ColorFromPalette(currentPalette, i * 20, fader, currentBlending);  // Now, let's run it through the palette lookup.
+        }
+
+        random16_set_seed(millis());  // Re-randomizing the random number seed for other routines.
+
+    }  // fadein()
 };
 
 FadeIn fadein;
 
-class RainbowMarch : public Pattern {
+class RainbowMarch {
    public:
-    void draw(uint8_t thisdelay = 200, uint8_t deltahue = 10) {
+    void draw() {
+        rainbow_march(200, 10);
+    }
+
+    void rainbow_march(uint8_t thisdelay, uint8_t deltahue) {  // The fill_rainbow call doesn't support brightness levels.
         uint8_t thishue = millis() * (255 - thisdelay) / 255;  // To change the rate, add a beat or something to the result. 'thisdelay' must be a fixed value.
 
-        thishue = beat8(50);  // This uses a FastLED sawtooth generator. Again, the '50' should not change on the fly.
-        // thishue = beatsin8(50, 0, 255);  // This can change speeds on the fly. You can also add these to each other.
+        // thishue = beat8(50);                                       // This uses a FastLED sawtooth generator. Again, the '50' should not change on the fly.
+        // thishue = beatsin8(50,0,255);                              // This can change speeds on the fly. You can also add these to each other.
 
-        fill_rainbow(leds, NUM_LEDS, thishue, deltahue);
+        fill_rainbow(leds, NUM_LEDS, thishue, deltahue);  // Use FastLED's fill_rainbow routine.
     }
 };
 
 RainbowMarch rainbowMarch;
-
-class PalleteCrossfade : public Pattern {
-   public:
-    void FillLEDsFromPaletteColors(uint8_t colorIndex) {
-        for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = ColorFromPalette(currentPalette, colorIndex + sin8(i * 16), 255);
-            colorIndex += 3;
-        }
-
-    }  // FillLEDsFromPaletteColors()
-
-    void ChangePalettePeriodically() {
-        uint8_t secondHand = (millis() / 1000) % 60;
-        static uint8_t lastSecond = 99;
-
-        if (lastSecond != secondHand) {
-            lastSecond = secondHand;
-            CRGB p = CHSV(HUE_PURPLE, 255, 255);
-            CRGB g = CHSV(HUE_GREEN, 255, 255);
-            CRGB b = CRGB::Black;
-            CRGB w = CRGB::White;
-            if (secondHand == 0) {
-                targetPalette = RainbowColors_p;
-            }
-            if (secondHand == 10) {
-                targetPalette = CRGBPalette16(g, g, b, b, p, p, b, b, g, g, b, b, p, p, b, b);
-            }
-            if (secondHand == 20) {
-                targetPalette = CRGBPalette16(b, b, b, w, b, b, b, w, b, b, b, w, b, b, b, w);
-            }
-            if (secondHand == 30) {
-                targetPalette = LavaColors_p;
-            }
-            if (secondHand == 40) {
-                targetPalette = CloudColors_p;
-            }
-            if (secondHand == 50) {
-                targetPalette = PartyColors_p;
-            }
-        }
-    }  // ChangePalettePeriodically()
-
-    void draw() {
-        this->ChangePalettePeriodically();
-
-        EVERY_N_MILLISECONDS(100) {
-            uint8_t maxChanges = 24;
-            nblendPaletteTowardPalette(this->currentPalette, this->targetPalette, maxChanges);
-        }
-
-        EVERY_N_MILLISECONDS(20) {
-            static uint8_t startIndex = 0;
-            startIndex += 1;  // motion speed
-            this->FillLEDsFromPaletteColors(startIndex);
-        }
-    }
-};
-
-PalleteCrossfade palCrossfade;
 
 // HEAVILY DERIVED FROM https://github.com/darrenpmeyer/Arduino-FireBoard/blob/master/FireBoard.ino
 
