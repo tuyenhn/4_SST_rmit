@@ -4,8 +4,6 @@
 #include "char_map.h"
 #include "fastled_main.h"
 
-// HEAVILY DERIVED FROM https://github.com/marcmerlin/FastLED_NeoMatrix_SmartMatrix_LEDMatrix_GFX_Demos/tree/master/GFX/Aurora
-
 const CRGBPalette16 GrayscaleColors_p = CRGBPalette16(CRGB::Black, CRGB::White);
 const CRGBPalette16 IceColors_p = CRGBPalette16(CRGB::Black, CRGB::Blue, CRGB::Aqua, CRGB::White);
 
@@ -52,11 +50,13 @@ class PaletteCtrl {
     }
 };
 
+// HEAVILY DERIVED FROM https://github.com/marcmerlin/FastLED_NeoMatrix_SmartMatrix_LEDMatrix_GFX_Demos/tree/master/GFX/Aurora
+
 class Drift {
    public:
     void draw() {
         uint8_t dim = beatsin8(2, 170, 250);
-        fadeall(dim);
+        fadeAll(dim);
 
         for (uint8_t i = 0; i < MWIDTH; i++) {
             CRGB color;
@@ -64,7 +64,7 @@ class Drift {
             uint8_t x = 0;
             uint8_t y = 0;
 
-            if (i < 75) {
+            if (i < MATRIX_CENTER_X) {
                 x = beatcos8((i + 1) * 2, i, MWIDTH - i);
                 y = beatsin8((i + 1) * 2, i, MHEIGHT - i);
                 color = ColorFromPalette(PaletteCtrl::curPalette, i * 14);
@@ -84,13 +84,13 @@ Drift drift;
 class Pendulum {
    public:
     void draw() {
-        fadeall(170);
+        fadeAll(170);
 
         for (int x = 0; x < MWIDTH; x++) {
             //uint8_t y = beatsin8(x + MWIDTH, 0, MHEIGHT);
-            uint8_t y = beatsin8(x + 1, 0, MHEIGHT);
+            uint8_t y = beatsin16(x + 1, 0, MHEIGHT);
 
-            CRGB color = ColorFromPalette(PaletteCtrl::curPalette, x * 7, 255);
+            CRGB color = ColorFromPalette(PaletteCtrl::curPalette, x * 7);
             drawPixel(x, y, color);
         }
     }
@@ -174,15 +174,26 @@ class Spiral {
         // draw just a line defined by 5 oszillators
         // this works -- merlin
         BresenhamLine(
-            multiTimer[3].count,                 // x1
-            multiTimer[4].count,                 // y1
-            multiTimer[0].count,                 // x2
-            multiTimer[1].count,                 // y2
-            CHSV(multiTimer[2].count, 255, 255)  // color
+            multiTimer[3].count,  // x1
+            multiTimer[4].count,  // y1
+            multiTimer[0].count,  // x2
+            multiTimer[1].count,  // y2
+            multiTimer[2].count   // color
         );
 
+        // this doesn't work -- merlin
+        // manipulate the screen buffer
+        // with fixed parameters (could be oszillators too)
+        // center x, y, radius, scale color down
+        // --> affects always a square with an odd length
+        SpiralStream(15, 15, 16, 128);
+
+        // why not several times?!
+        SpiralStream(16, 6, 6, 128);
+        SpiralStream(10, 24, 10, 128);
+
         // increase the contrast
-        fadeall(224);
+        fadeAll(224);
     }
 };
 
@@ -198,26 +209,79 @@ class Wave {
     byte hueUpdateFrequency = 0;
     byte hue = 0;
 
-    uint8_t scale = 256 / MWIDTH;
+    byte rotation = 0;
 
-    uint8_t maxX = MWIDTH - 1;
-    uint8_t maxY = MHEIGHT - 1;
+    uint8_t scale = max(256 / MWIDTH, 1);
+
+    uint16_t maxX = MWIDTH - 1;
+    uint16_t maxY = MHEIGHT - 1;
 
     uint8_t waveCount = 1;
 
    public:
+    void start() {
+        rotation = random(0, 4);
+        if (MHEIGHT > MWIDTH) rotation = 1;
+        if (MHEIGHT < MWIDTH) rotation = 0;
+        waveCount = random(1, 3);
+        //thetaUpdateFrequency = random(1, 2);
+        //hueUpdateFrequency = random(1, 6);
+    }
+
     void draw() {
         int n = 0;
 
-        for (int x = 0; x < MWIDTH; x++) {
-            n = quadwave8(x * 2 + theta) / scale;
-            CRGB color = ColorFromPalette(PaletteCtrl::curPalette, x + hue, 150);
-            drawPixel(x, n, color);
-            if (waveCount == 2)
-                drawPixel(x, maxY - n, color);
+        switch (rotation) {
+            case 0:
+                for (int x = 0; x < MWIDTH; x++) {
+                    n = quadwave8(x * 2 + theta) / scale;
+                    //backgroundLayer.drawPixel(x, n, ColorFromPalette(PaletteCtrl::curPalette, x + hue));
+                    CRGB color = ColorFromPalette(PaletteCtrl::curPalette, x + hue);
+                    drawPixel(x, n, color);
+                    if (waveCount == 2)
+                        //backgroundLayer.drawPixel(x, maxY - n, ColorFromPalette(PaletteCtrl::curPalette, x + hue));
+                        drawPixel(x, maxY - n, color);
+                }
+                break;
+
+            case 1:
+                for (int y = 0; y < MHEIGHT; y++) {
+                    n = quadwave8(y * 2 + theta) / scale;
+                    // backgroundLayer.drawPixel(n, y, ColorFromPalette(PaletteCtrl::curPalette, y + hue));
+                    CRGB color = ColorFromPalette(PaletteCtrl::curPalette, y + hue);
+                    drawPixel(n, y, color);
+                    if (waveCount == 2)
+                        //backgroundLayer.drawPixel(maxX - n, y, ColorFromPalette(PaletteCtrl::curPalette, y + hue));
+                        drawPixel(maxX - n, y, color);
+                }
+                break;
+
+            case 2:
+                for (int x = 0; x < MWIDTH; x++) {
+                    n = quadwave8(x * 2 - theta) / scale;
+                    // backgroundLayer.drawPixel(x, n, ColorFromPalette(PaletteCtrl::curPalette, x + hue));
+                    CRGB color = ColorFromPalette(PaletteCtrl::curPalette, x + hue);
+                    drawPixel(x, n, color);
+                    if (waveCount == 2)
+                        //backgroundLayer.drawPixel(x, maxY - n, ColorFromPalette(PaletteCtrl::curPalette, x + hue));
+                        drawPixel(x, maxY - n, color);
+                }
+                break;
+
+            case 3:
+                for (int y = 0; y < MHEIGHT; y++) {
+                    n = quadwave8(y * 2 - theta) / scale;
+                    // backgroundLayer.drawPixel(n, y, ColorFromPalette(PaletteCtrl::curPalette, y + hue));
+                    CRGB color = ColorFromPalette(PaletteCtrl::curPalette, y + hue);
+                    drawPixel(n, y, color);
+                    if (waveCount == 2)
+                        //backgroundLayer.drawPixel(maxX - n, y, ColorFromPalette(PaletteCtrl::curPalette, y + hue));
+                        drawPixel(maxX - n, y, color);
+                }
+                break;
         }
 
-        fadeall(254);
+        fadeAll(254);
 
         if (thetaUpdate >= thetaUpdateFrequency) {
             thetaUpdate = 0;
@@ -326,7 +390,7 @@ class Plasma {
                 v += cos16(y * (128 - wibble) * 2 + time);
                 v += sin16(y * x * cos8(-time) / 2);
 
-                leds[XYsafe(x, y)] = ColorFromPalette(pal, (v >> 8) + 127, 80);
+                Pixel(x, y, (v >> 8) + 127);
             }
         }
 
@@ -336,7 +400,6 @@ class Plasma {
         if (cycles >= 2048) {
             time = 0;
             cycles = 0;
-            delay(1000);
         }
     }
 };
@@ -352,11 +415,10 @@ class Pulse {
     int maxSteps = 16;
     float fadeRate = 0.8;
     int diff;
-    CRGBPalette16 pal = IceColors_p;
 
    public:
     void draw() {
-        fadeall(235);
+        fadeAll(235);
 
         if (step == -1) {
             centerX = random(MWIDTH);
@@ -366,26 +428,26 @@ class Pulse {
         }
 
         if (step == 0) {
-            //backgroundLayer.drawCircle(centerX, centerY, step, ColorFromPalette(pal, hue));
-            CRGB color = ColorFromPalette(pal, hue, 50);
-            // setPassThruColor(color.r * 65536 + color.g * 256 + color.b);
-            drawCircle(centerX, centerY, step, ColorFromPalette(pal, hue, 50));
-            // setPassThruColor();
+            //backgroundLayer.drawCircle(centerX, centerY, step, ColorFromPalette(PaletteCtrl::curPalette, hue));
+            CRGB color = ColorFromPalette(PaletteCtrl::curPalette, hue);
+            setPassThruColor(color.r * 65536 + color.g * 256 + color.b);
+            drawCircle(centerX, centerY, step, ColorFromPalette(PaletteCtrl::curPalette, hue));
+            setPassThruColor();
             step++;
         } else {
             if (step < maxSteps) {
                 // initial pulse
-                //backgroundLayer.drawCircle(centerX, centerY, step, ColorFromPalette(pal, hue, pow(fadeRate, step - 2) * 255));
-                CRGB color = ColorFromPalette(pal, hue, pow(fadeRate, step - 2) * 255);
-                // setPassThruColor(color.r * 65536 + color.g * 256 + color.b);
-                drawCircle(centerX, centerY, step, ColorFromPalette(pal, hue, pow(fadeRate, step - 2) * 255));
+                //backgroundLayer.drawCircle(centerX, centerY, step, ColorFromPalette(PaletteCtrl::curPalette, hue, pow(fadeRate, step - 2) * 255));
+                CRGB color = ColorFromPalette(PaletteCtrl::curPalette, hue, pow(fadeRate, step - 2) * 255);
+                setPassThruColor(color.r * 65536 + color.g * 256 + color.b);
+                drawCircle(centerX, centerY, step, ColorFromPalette(PaletteCtrl::curPalette, hue, pow(fadeRate, step - 2) * 255));
 
                 // secondary pulse
                 if (step > 3) {
-                    //backgroundLayer.drawCircle(centerX, centerY, step - 3, ColorFromPalette(pal, hue, pow(fadeRate, step - 2) * 255));
-                    CRGB color = ColorFromPalette(pal, hue, pow(fadeRate, step - 2) * 255);
-                    // setPassThruColor(color.r * 65536 + color.g * 256 + color.b);
-                    drawCircle(centerX, centerY, step - 3, ColorFromPalette(pal, hue, pow(fadeRate, step - 2) * 255));
+                    //backgroundLayer.drawCircle(centerX, centerY, step - 3, ColorFromPalette(PaletteCtrl::curPalette, hue, pow(fadeRate, step - 2) * 255));
+                    CRGB color = ColorFromPalette(PaletteCtrl::curPalette, hue, pow(fadeRate, step - 2) * 255);
+                    setPassThruColor(color.r * 65536 + color.g * 256 + color.b);
+                    drawCircle(centerX, centerY, step - 3, ColorFromPalette(PaletteCtrl::curPalette, hue, pow(fadeRate, step - 2) * 255));
                 }
                 step++;
             } else {
@@ -411,7 +473,7 @@ class Munch {
     void draw() {
         for (byte x = 0; x < MWIDTH; x++) {
             for (byte y = 0; y < MHEIGHT; y++) {
-                leds[XYsafe(x, y)] = (x ^ y ^ flip) < count ? ColorFromPalette(pal, ((x ^ y) << 3) + generation, 50) : CRGB::Black;
+                leds[XYsafe(x, y)] = (x ^ y ^ flip) < count ? ColorFromPalette(pal, ((x ^ y) << 3) + generation) : CRGB::Black;
             }
         }
 
@@ -542,7 +604,7 @@ PatternSnake snake;
 
 class SimplexNoise {
    public:
-    CRGBPalette16 pal = IceColors_p;
+    CRGBPalette16 pal = LavaColors_p;
     void start() {
         // Initialize our coordinates to some random values
         noise_x = random16();
@@ -846,13 +908,13 @@ class Fireworks {
         for (int y = MHEIGHT; y > orig_y; y--) {
             leds[XYsafe(orig_x, y)] = col;
             FastLED.show();
-            fadeall(190);
+            fadeAll(190);
             delay(1);
         }
         for (int r = 0; r < rad; r++) {
             drawCircle(orig_x, orig_y, r, col);
             FastLED.show();
-            fadeall(190);
+            fadeAll(190);
             delay(1);
         }
     }
@@ -892,7 +954,7 @@ class RainbowFlow {
         drawFastHLine(0, y++, MWIDTH, CHSV(hue++, 255, 255));
         if (hue > 255) hue = 0;
         if (y > MHEIGHT) y = 0;
-        fadeall(220);
+        fadeAll(220);
     }
 };
 
@@ -939,7 +1001,7 @@ class ScrollingText {
         for (int y = 25; y > 0; y--) {
             drawFastHLine(0, 25 - y, MWIDTH, bg_color);
             drawFastHLine(0, 25 + y, MWIDTH, bg_color);
-            fadeall(230);
+            fadeAll(230);
         }
         drawFastHLine(0, 25, MWIDTH, bg_color);
     }

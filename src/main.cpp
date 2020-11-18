@@ -14,6 +14,8 @@ void setup() {
 
     PaletteCtrl::palIndex = 0;
     PaletteCtrl::loadPalette(0);
+
+    NoiseVariablesSetup();
 }
 
 byte pattern_it = 1;

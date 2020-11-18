@@ -3,14 +3,9 @@
 
 #include <FastLED.h>
 
+#include "gamma.h"
 #include "matrix_mapping.h"
 
-#define xorswap(a, b) \
-    {                 \
-        a = a ^ b;    \
-        b = a ^ b;    \
-        a = a ^ b;    \
-    }
 #define NUM_LEDS 3163
 
 const uint8_t MWIDTH = 152;
@@ -28,8 +23,9 @@ uint8_t rotation = 0;
 CRGB leds_plus_safety_pixel[NUM_LEDS + 1];
 CRGB* const leds(leds_plus_safety_pixel + 1);
 
-void fadeall(uint8_t scale) {
-    for (int i = 0; i < NUM_LEDS; i++) leds[i].nscale8(scale);
+// scale the brightness of the screenbuffer down
+void fadeAll(byte value) {
+    for (int i = 0; i < NUM_LEDS; i++) leds[i].nscale8(value);
 }
 
 inline uint16_t XYsafe(uint16_t x, uint16_t y) {
@@ -43,41 +39,30 @@ inline uint16_t XYsafe(uint16_t x, uint16_t y) {
         return -1;
 }
 
-void nblendU8TowardU8(uint8_t& cur, const uint8_t target, uint8_t amount) {
-    if (cur == target) return;
+// ---------------------------------------------------------------------
 
-    if (cur < target) {
-        uint8_t delta = target - cur;
-        delta = scale8_video(delta, amount);
-        cur += delta;
-    } else {
-        uint8_t delta = cur - target;
-        delta = scale8_video(delta, amount);
-        cur -= delta;
-    }
-}
+CRGB leds2[NUM_LEDS];
 
-CRGB fadeTowardColor(CRGB& cur, const CRGB& target, uint8_t amount) {
-    nblendU8TowardU8(cur.red, target.red, amount);
-    nblendU8TowardU8(cur.green, target.green, amount);
-    nblendU8TowardU8(cur.blue, target.blue, amount);
-    return cur;
-}
+uint32_t noise_x;
+uint32_t noise_y;
+uint32_t noise_z;
+uint32_t noise_scale_x;
+uint32_t noise_scale_y;
 
-uint8_t mapcos8(uint8_t theta, uint8_t lowest = 0, uint8_t highest = 255) {
-    uint8_t beatcos = cos8(theta);
+uint8_t noise[MWIDTH][MHEIGHT];
+uint8_t noisesmoothing;
+
+uint8_t beatcos8(accum88 beats_per_minute, uint8_t lowest = 0, uint8_t highest = 255, uint32_t timebase = 0, uint8_t phase_offset = 0) {
+    uint8_t beat = beat8(beats_per_minute, timebase);
+    uint8_t beatcos = cos8(beat + phase_offset);
     uint8_t rangewidth = highest - lowest;
     uint8_t scaledbeat = scale8(beatcos, rangewidth);
     uint8_t result = lowest + scaledbeat;
     return result;
 }
 
-uint8_t mapsin8(uint8_t theta, uint8_t lowest = 0, uint8_t highest = 255) {
-    uint8_t beatsin = sin8(theta);
-    uint8_t rangewidth = highest - lowest;
-    uint8_t scaledbeat = scale8(beatsin, rangewidth);
-    uint8_t result = lowest + scaledbeat;
-    return result;
+void BresenhamLine(int x0, int y0, int x1, int y1, byte colorIndex) {
+    BresenhamLine(x0, y0, x1, y1, ColorFromPalette(PaletteCtrl::curPalette, colorIndex));
 }
 
 void BresenhamLine(int x0, int y0, int x1, int y1, CRGB color) {
@@ -99,6 +84,12 @@ void BresenhamLine(int x0, int y0, int x1, int y1, CRGB color) {
     }
 }
 
+void Pixel(int x, int y, uint8_t colorIndex) {
+    leds[XYsafe(x, y)] = ColorFromPalette(PaletteCtrl::curPalette, colorIndex);
+}
+
+// create a square twister to the left or counter-clockwise
+// x and y for center, r for radius
 void SpiralStream(int x, int y, int r, byte dimm) {
     for (int d = r; d >= 0; d--) {  // from the outside to the inside
         for (int i = x - d; i <= x + d; i++) {
@@ -120,32 +111,22 @@ void SpiralStream(int x, int y, int r, byte dimm) {
     }
 }
 
-uint8_t beatcos8(accum88 beats_per_minute, uint8_t lowest = 0, uint8_t highest = 255, uint32_t timebase = 0, uint8_t phase_offset = 0) {
-    uint8_t beat = beat8(beats_per_minute, timebase);
-    uint8_t beatcos = cos8(beat + phase_offset);
-    uint8_t rangewidth = highest - lowest;
-    uint8_t scaledbeat = scale8(beatcos, rangewidth);
-    uint8_t result = lowest + scaledbeat;
-    return result;
+void NoiseVariablesSetup() {
+    noisesmoothing = 200;
+
+    noise_x = random16();
+    noise_y = random16();
+    noise_z = random16();
+    noise_scale_x = 6000;
+    noise_scale_y = 6000;
 }
 
-uint32_t noise_x;
-uint32_t noise_y;
-uint32_t noise_z;
-uint32_t noise_scale_x;
-uint32_t noise_scale_y;
-
-uint8_t noise[MWIDTH][MHEIGHT];
-uint8_t noisesmoothing;
-
-CRGB leds2[NUM_LEDS];
-
 void FillNoise() {
-    for (uint8_t i = 0; i < MWIDTH; i++) {
-        uint32_t ioffset = noise_scale_x * (i - 17);
+    for (uint16_t i = 0; i < MWIDTH; i++) {
+        uint32_t ioffset = noise_scale_x * (i - MATRIX_CENTRE_Y);
 
-        for (uint8_t j = 0; j < MHEIGHT; j++) {
-            uint32_t joffset = noise_scale_y * (j - 17);
+        for (uint16_t j = 0; j < MHEIGHT; j++) {
+            uint32_t joffset = noise_scale_y * (j - MATRIX_CENTRE_Y);
 
             byte data = inoise16(noise_x + ioffset, noise_y + joffset, noise_z) >> 8;
 
@@ -158,21 +139,89 @@ void FillNoise() {
     }
 }
 
-void Caleidoscope3() {
-    for (int x = 0; x <= 74; x++) {
-        for (int y = 0; y <= x; y++) {
-            leds[XYsafe(x, y)] = leds[XYsafe(y, x)];
+void MoveFractionalNoiseX(byte amt = 16) {
+    // move delta pixelwise
+    for (int y = 0; y < MHEIGHT; y++) {
+        uint16_t amount = noise[0][y] * amt;
+        byte delta = 31 - (amount / 256);
+
+        for (int x = 0; x < MWIDTH - delta; x++) {
+            leds2[XYsafe(x, y)] = leds[XYsafe(x + delta, y)];
         }
+        for (int x = MWIDTH - delta; x < MWIDTH; x++) {
+            leds2[XYsafe(x, y)] = leds[XYsafe(x + delta - MWIDTH, y)];
+        }
+    }
+
+    //move fractions
+    CRGB PixelA;
+    CRGB PixelB;
+
+    for (uint16_t y = 0; y < MHEIGHT; y++) {
+        uint16_t amount = noise[0][y] * amt;
+        byte delta = 31 - (amount / 256);
+        byte fractions = amount - (delta * 256);
+
+        for (uint16_t x = 1; x < MWIDTH; x++) {
+            PixelA = leds2[XYsafe(x, y)];
+            PixelB = leds2[XYsafe(x - 1, y)];
+
+            PixelA %= 255 - fractions;
+            PixelB %= fractions;
+
+            leds[XYsafe(x, y)] = PixelA + PixelB;
+        }
+
+        PixelA = leds2[XYsafe(0, y)];
+        PixelB = leds2[XYsafe(MWIDTH - 1, y)];
+
+        PixelA %= 255 - fractions;
+        PixelB %= fractions;
+
+        leds[XYsafe(0, y)] = PixelA + PixelB;
     }
 }
 
-void Caleidoscope1() {
-    for (int x = 0; x < 75; x++) {
-        for (int y = 0; y < 18; y++) {
-            leds[XYsafe(MWIDTH - 1 - x, y)] = leds[XYsafe(x, y)];
-            leds[XYsafe(MWIDTH - 1 - x, MHEIGHT - 1 - y)] = leds[XYsafe(x, y)];
-            leds[XYsafe(x, MHEIGHT - 1 - y)] = leds[XYsafe(x, y)];
+void MoveFractionalNoiseY(byte amt = 16) {
+    // move delta pixelwise
+    for (int x = 0; x < MWIDTH; x++) {
+        uint16_t amount = noise[x][0] * amt;
+        byte delta = 31 - (amount / 256);
+
+        for (int y = 0; y < MWIDTH - delta; y++) {
+            leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta)];
         }
+        for (int y = MWIDTH - delta; y < MWIDTH; y++) {
+            leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta - MWIDTH)];
+        }
+    }
+
+    //move fractions
+    CRGB PixelA;
+    CRGB PixelB;
+
+    for (uint16_t x = 0; x < MHEIGHT; x++) {
+        uint16_t amount = noise[x][0] * amt;
+        byte delta = 31 - (amount / 256);
+        byte fractions = amount - (delta * 256);
+
+        for (uint16_t y = 1; y < MWIDTH; y++) {
+            PixelA = leds2[XYsafe(x, y)];
+            PixelB = leds2[XYsafe(x, y - 1)];
+
+            PixelA %= 255 - fractions;
+            PixelB %= fractions;
+
+            leds[XYsafe(x, y)] = PixelA + PixelB;
+        }
+
+        PixelA = leds2[XYsafe(x, 0)];
+        PixelB = leds2[XYsafe(x, MWIDTH - 1)];
+
+        PixelA %= 255 - fractions;
+        PixelB %= fractions;
+
+        leds[XYsafe(x, 0)] = PixelA + PixelB;
     }
 }
 
@@ -212,36 +261,6 @@ void MoveY(byte delta) {
     }
 }
 
-void MoveFractionalNoiseX(byte amt = 16) {
-    // move delta pixelwise
-    for (int y = 0; y < MHEIGHT; y++) {
-        uint16_t amount = noise[0][y] * amt;
-        byte delta = 31 - (amount / 256);
-
-        for (int x = 0; x < MWIDTH - delta; x++) {
-            leds2[XYsafe(x, y)] = leds[XYsafe(x + delta, y)];
-        }
-        for (int x = MWIDTH - delta; x < MWIDTH; x++) {
-            leds2[XYsafe(x, y)] = leds[XYsafe(x + delta - MWIDTH, y)];
-        }
-    }
-}
-
-void MoveFractionalNoiseY(byte amt = 16) {
-    // move delta pixelwise
-    for (int x = 0; x < MWIDTH; x++) {
-        uint16_t amount = noise[x][0] * amt;
-        byte delta = 31 - (amount / 256);
-
-        for (int y = 0; y < MWIDTH - delta; y++) {
-            leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta)];
-        }
-        for (int y = MWIDTH - delta; y < MWIDTH; y++) {
-            leds2[XYsafe(x, y)] = leds[XYsafe(x, y + delta - MWIDTH)];
-        }
-    }
-}
-
 void standardNoiseSmearing() {
     noise_x += 1000;
     noise_y += 1000;
@@ -256,9 +275,85 @@ void standardNoiseSmearing() {
     MoveFractionalNoiseX(4);
 }
 
+// rotates the first 16x16 quadrant 3 times onto a 32x32 (+90 degrees rotation for each one)
+void Caleidoscope1() {
+    for (int x = 0; x < MATRIX_CENTER_X; x++) {
+        for (int y = 0; y < MATRIX_CENTER_Y; y++) {
+            leds[XYsafe(MWIDTH - 1 - x, y)] = leds[XYsafe(x, y)];
+            leds[XYsafe(MWIDTH - 1 - x, MHEIGHT - 1 - y)] = leds[XYsafe(x, y)];
+            leds[XYsafe(x, MHEIGHT - 1 - y)] = leds[XYsafe(x, y)];
+        }
+    }
+}
+
+// copy one diagonal triangle into the other one within a 16x16
+void Caleidoscope3() {
+    for (int x = 0; x <= MATRIX_CENTRE_X; x++) {
+        for (int y = 0; y <= x; y++) {
+            leds[XYsafe(x, y)] = leds[XYsafe(y, x)];
+        }
+    }
+}
+
+// ---------------------------------------------------------------------
+
+void nblendU8TowardU8(uint8_t& cur, const uint8_t target, uint8_t amount) {
+    if (cur == target) return;
+
+    if (cur < target) {
+        uint8_t delta = target - cur;
+        delta = scale8_video(delta, amount);
+        cur += delta;
+    } else {
+        uint8_t delta = cur - target;
+        delta = scale8_video(delta, amount);
+        cur -= delta;
+    }
+}
+
+CRGB fadeTowardColor(CRGB& cur, const CRGB& target, uint8_t amount) {
+    nblendU8TowardU8(cur.red, target.red, amount);
+    nblendU8TowardU8(cur.green, target.green, amount);
+    nblendU8TowardU8(cur.blue, target.blue, amount);
+    return cur;
+}
+
+// ---------------------------------------------------------------------
+
+#define xorswap(a, b) \
+    {                 \
+        a = a ^ b;    \
+        b = a ^ b;    \
+        a = a ^ b;    \
+    }
+
+uint32_t passThruColor;
+boolean passThruFlag = false;
+
+// Expand 16-bit input color (Adafruit_GFX colorspace) to 24-bit (NeoPixel)
+// (w/gamma adjustment)
+static uint32_t expandColor(uint16_t color) {
+    return ((uint32_t)pgm_read_byte(&gamma5[color >> 11]) << 16) |
+           ((uint32_t)pgm_read_byte(&gamma6[(color >> 5) & 0x3F]) << 8) |
+           pgm_read_byte(&gamma5[color & 0x1F]);
+}
+
+// Pass raw color value to set/enable passthrough
+void setPassThruColor(uint32_t c) {
+    passThruColor = c;
+    passThruFlag = true;
+}
+
+// Call without a value to reset (disable passthrough)
+void setPassThruColor(void) { passThruFlag = false; }
+
 void drawPixel(int16_t x, int16_t y, CRGB color) {
-    if ((x < 1) || (y < 0) || (x > MWIDTH) || (y >= MHEIGHT)) return;
-    leds[XYsafe(x, y)] = color;
+    if ((x < 1) || (y < 0) || (x >= MWIDTH) || (y >= MHEIGHT)) return;
+
+    if (passThruFlag)
+        leds[XYsafe(x, y)] = color;
+    else
+        leds[XYsafe(x, y)] = expandColor(color);
 }
 
 void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, CRGB color) {
@@ -332,29 +427,13 @@ void drawCircle(int16_t x0, int16_t y0, int16_t r, CRGB color) {
         f += ddF_x;
 
         drawPixel(x0 + x * 5, y0 + y, color);
-        // FastLED.show();
-        // delay(1000);
         drawPixel(x0 - x * 5, y0 + y, color);
-        // FastLED.show();
-        // delay(1000);
         drawPixel(x0 + x * 5, y0 - y, color);
-        // FastLED.show();
-        // delay(1000);
         drawPixel(x0 - x * 5, y0 - y, color);
-        // FastLED.show();
-        // delay(1000);
         drawPixel(x0 + y * 5, y0 + x, color);
-        // FastLED.show();
-        // delay(1000);
         drawPixel(x0 - y * 5, y0 + x, color);
-        // FastLED.show();
-        // delay(1000);
         drawPixel(x0 + y * 5, y0 - x, color);
-        // FastLED.show();
-        // delay(1000);
         drawPixel(x0 - y * 5, y0 - x, color);
-        // FastLED.show();
-        // delay(1000);
     }
 }
 
