@@ -15,6 +15,13 @@
 
 const uint8_t MWIDTH = 152;
 const uint8_t MHEIGHT = 37;
+
+const uint8_t MATRIX_CENTER_X = MWIDTH / 2;
+const uint8_t MATRIX_CENTER_Y = MHEIGHT / 2;
+
+const uint8_t MATRIX_CENTRE_X = MATRIX_CENTER_X - 1;
+const uint8_t MATRIX_CENTRE_Y = MATRIX_CENTER_Y - 1;
+
 const uint8_t brightness = 50;
 uint8_t rotation = 0;
 
