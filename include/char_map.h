@@ -374,11 +374,9 @@ unsigned char numMap[10][10][10] = {
         {0, 1, 1, 0, 0},
     }};
 
-class LEDPrinter {
+class TextPrinter {
    public:
-    CRGB bg_color;
-
-    void print(unsigned char c[10][10], int origX, int origY, CRGB col) {
+    static void print(unsigned char c[10][10], int origX, int origY, CRGB col) {
         int tempX = origX;
         for (int i = 0; i < 10; i++) {
             origX = tempX;
@@ -393,7 +391,7 @@ class LEDPrinter {
         }
     }
 
-    void print(std::string s, int origX, int origY, CRGB col) {
+    static void print(std::string s, int origX, int origY, CRGB col) {
         for (char c : s) {
             if (c >= 'a' && c <= 'z') {
                 unsigned char idx = c - 32 - 'A';
@@ -412,7 +410,7 @@ class LEDPrinter {
         }
     }
 
-    int getStrLen(std::string s) {
+    static int getStrLen(std::string s) {
         int len = 0;
         for (char c : s) {
             if (c >= 'a' && c <= 'z')
@@ -424,7 +422,5 @@ class LEDPrinter {
         return len;
     }
 };
-
-LEDPrinter printer;
 
 #endif

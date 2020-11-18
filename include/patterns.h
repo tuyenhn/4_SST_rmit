@@ -869,7 +869,7 @@ class ScrollingText {
    private:
     int str1_x = 1;
     int vel = -1;
-    int str1_len = printer.getStrLen("rmit");
+    int str1_len = TextPrinter::getStrLen("rmit");
     int str2_x = str1_x + str1_len;
     CRGB col1 = CRGB(255, 0, 0);
     CRGB col2 = CRGB::WhiteSmoke;
@@ -878,8 +878,8 @@ class ScrollingText {
    public:
     void draw() {
         fillBG();
-        printer.print("rmit", str1_x += vel, 22, col1);
-        printer.print("sst", str2_x += vel, 22, col2);
+        TextPrinter::print("rmit", str1_x += vel, 22, col1);
+        TextPrinter::print("sst", str2_x += vel, 22, col2);
 
         if (str1_x == -str1_len || str1_x == 153 - str1_len) vel = -vel;
     }

@@ -297,29 +297,6 @@ void Caleidoscope3() {
 
 // ---------------------------------------------------------------------
 
-void nblendU8TowardU8(uint8_t& cur, const uint8_t target, uint8_t amount) {
-    if (cur == target) return;
-
-    if (cur < target) {
-        uint8_t delta = target - cur;
-        delta = scale8_video(delta, amount);
-        cur += delta;
-    } else {
-        uint8_t delta = cur - target;
-        delta = scale8_video(delta, amount);
-        cur -= delta;
-    }
-}
-
-CRGB fadeTowardColor(CRGB& cur, const CRGB& target, uint8_t amount) {
-    nblendU8TowardU8(cur.red, target.red, amount);
-    nblendU8TowardU8(cur.green, target.green, amount);
-    nblendU8TowardU8(cur.blue, target.blue, amount);
-    return cur;
-}
-
-// ---------------------------------------------------------------------
-
 #define xorswap(a, b) \
     {                 \
         a = a ^ b;    \
