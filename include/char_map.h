@@ -5,7 +5,7 @@
 
 #include "fastled_main.h"
 
-unsigned char charMap[26][10][10] = {
+unsigned char charMap[26][7][9] = {
     {
         // A
         {0, 0, 1, 1, 0, 0},
@@ -272,7 +272,7 @@ unsigned char charMap[26][10][10] = {
 };
 unsigned char charLen[26] = {6, 5, 6, 6, 4, 4, 7, 6, 3, 4, 5, 4, 8, 7, 5, 6, 7, 6, 5, 7, 6, 9, 9, 6, 7, 5};
 
-unsigned char numMap[10][10][10] = {
+unsigned char numMap[10][7][9] = {
     {
         //0
         {0, 1, 1, 1, 0},
@@ -376,15 +376,15 @@ unsigned char numMap[10][10][10] = {
 
 class TextPrinter {
    public:
-    static void print(unsigned char c[10][10], int origX, int origY, CRGB col) {
+    static void print(unsigned char c[7][9], int origX, int origY, CRGB color) {
         int tempX = origX;
-        for (int i = 0; i < 10; i++) {
+        for (int row = 0; row < 7; row++) {
             origX = tempX;
-            for (int row = 0; row < 10; row++) {
-                if (c[i][row]) {
-                    leds[XYsafe(origX + row, origY + i)] = col;
-                    leds[XYsafe(origX + row + 1, origY + i)] = col;
-                    leds[XYsafe(origX + row + 2, origY + i)] = col;
+            for (int col = 0; col < 9; col++) {
+                if (c[row][col]) {
+                    leds[XYsafe(origX + col, origY + row)] = color;
+                    leds[XYsafe(origX + col + 1, origY + row)] = color;
+                    leds[XYsafe(origX + col + 2, origY + row)] = color;
                 }
                 origX += 2;
             }
