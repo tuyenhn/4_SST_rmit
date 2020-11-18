@@ -40,5 +40,5 @@
   },
   "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 0}",
   "editor.formatOnSave": true,
-  "python.pythonPath": "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python38-32\\python.exe"
+  "python.pythonPath": "C:\\Users\\hntuy\\AppData\\Local\\Programs\\Python\\Python38\\python.exe"
 }
