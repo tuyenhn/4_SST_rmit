@@ -849,28 +849,6 @@ class Fireworks {
 
 Fireworks fireworks;
 
-class NightStars {
-   public:
-    void draw() {
-        for (size_t i = 0; i < NUM_LEDS; i++) {
-            if (leds[i] == CHSV(170, 198, 112)) continue;
-            fadeTowardColor(leds[i], CHSV(170, 198, 112), 15);
-        }
-
-        FastLED.show();
-        delay(1);
-
-        if (random8() < 102) {
-            uint16_t pos = random16(NUM_LEDS);
-            leds[pos - 1] = CHSV(43, 255, 255);
-            leds[pos] = CHSV(43, 255, 255);
-            leds[pos + 1] = CHSV(43, 255, 255);
-        }
-    }
-};
-
-NightStars nightstars;
-
 class RainbowFlow {
    private:
     uint8_t hue = 0;
@@ -886,24 +864,6 @@ class RainbowFlow {
 };
 
 RainbowFlow rainbowFlow;
-
-class Tame {
-   private:
-    char x0 = 75;
-    char y0 = 18;
-    uint8_t h = 0;
-
-   public:
-    void draw() {
-        for (size_t r = 0; r < 75; r++) {
-            drawCircle(x0, y0, r, CHSV(h, 255, 100));
-            h += 255 / 5;
-            if (h > 255) h = 0;
-        }
-    }
-};
-
-Tame tame;
 
 class ScrollingText {
    private:
