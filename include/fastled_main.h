@@ -1,10 +1,9 @@
 #ifndef FASTLED_MAIN_H
 #define FASTLED_MAIN_H
 
-#include <FastLED.h>
-
 #include "gamma.h"
 #include "matrix_mapping.h"
+#include "palette_control.h"
 
 #define NUM_LEDS 3163
 

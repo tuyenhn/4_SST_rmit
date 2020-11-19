@@ -2,53 +2,6 @@
 #define PATTERNS_H
 
 #include "char_map.h"
-#include "fastled_main.h"
-
-const CRGBPalette16 GrayscaleColors_p = CRGBPalette16(CRGB::Black, CRGB::White);
-const CRGBPalette16 IceColors_p = CRGBPalette16(CRGB::Black, CRGB::Blue, CRGB::Aqua, CRGB::White);
-
-class PaletteCtrl {
-   public:
-    static CRGBPalette16 curPalette;
-    static uint8_t palIndex;
-
-    static void loadPalette(uint8_t idx) {
-        switch (idx) {
-            case 0:
-                curPalette = RainbowColors_p;
-                break;
-            case 1:
-                curPalette = OceanColors_p;
-                break;
-            case 2:
-                curPalette = CloudColors_p;
-                break;
-            case 3:
-                curPalette = ForestColors_p;
-                break;
-            case 4:
-                curPalette = PartyColors_p;
-                break;
-            case 5:
-                curPalette = GrayscaleColors_p;
-                break;
-            case 6:
-                curPalette = HeatColors_p;
-                break;
-            case 7:
-                curPalette = LavaColors_p;
-                break;
-            case 8:
-                curPalette = IceColors_p;
-                break;
-        }
-    }
-
-    static void cyclePalette() {
-        if (palIndex > 8) palIndex = 0;
-        loadPalette(palIndex++);
-    }
-};
 
 // HEAVILY DERIVED FROM https://github.com/marcmerlin/FastLED_NeoMatrix_SmartMatrix_LEDMatrix_GFX_Demos/tree/master/GFX/Aurora
 
@@ -467,7 +420,7 @@ class Munch {
     byte dir = 1;
     byte flip = 0;
     byte generation = 0;
-    CRGBPalette16 pal = CloudColors_p;
+    CRGBPalette16 pal = PaletteCtrl::getPalette(2);
 
    public:
     void draw() {
@@ -498,7 +451,7 @@ Munch munch;
 
 class PatternSnake {
    private:
-    CRGBPalette16 pal = ForestColors_p;
+    CRGBPalette16 pal = PaletteCtrl::getPalette(3);
     static const byte SNAKE_LENGTH = MWIDTH / 2;
 
     CRGB colors[SNAKE_LENGTH];
@@ -604,7 +557,7 @@ PatternSnake snake;
 
 class SimplexNoise {
    public:
-    CRGBPalette16 pal = LavaColors_p;
+    CRGBPalette16 pal = PaletteCtrl::getPalette(7);
     void start() {
         // Initialize our coordinates to some random values
         noise_x = random16();
@@ -712,7 +665,7 @@ Serendipitous seren;
 
 class FadeIn {
    private:
-    CRGBPalette16 currentPalette = PartyColors_p;
+    CRGBPalette16 currentPalette = PaletteCtrl::getPalette(4);
     CRGBPalette16 targetPalette;
     TBlendType currentBlending = LINEARBLEND;
 
@@ -797,7 +750,7 @@ class FirePlace {
             unsigned int heat = constrain(spark[i], HOT / 2, MAXHOT);
             for (int j = MHEIGHT - 1; j >= 0; j--) {
                 /* Calculate the color on the palette from how hot this pixel is */
-                byte index = constrain(heat, 0, HOT);
+                byte index = constrain(heat, (unsigned int)0, HOT);
                 stack[i][j] = ColorFromPalette(HeatColors_p, index);
 
                 /* The next higher pixel will be "cooler", so calculate the drop */

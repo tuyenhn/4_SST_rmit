@@ -9,11 +9,12 @@ void setup() {
     FastLED.show();
 
     spiral.start();
+    wave.start();
     mandala.start();
     simplex.start();
 
     PaletteCtrl::palIndex = 0;
-    PaletteCtrl::loadPalette(0);
+    PaletteCtrl::cyclePalette();
 
     NoiseVariablesSetup();
 }
