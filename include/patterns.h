@@ -881,7 +881,7 @@ class ScrollingText {
         TextPrinter::print("rmit", str1_x += vel, 22, col1);
         TextPrinter::print("sst", str2_x += vel, 22, col2);
 
-        if (str1_x == -str1_len || str1_x == 153 - str1_len) vel = -vel;
+        if (str1_x == -str1_len || str1_x == MWIDTH + 1 - str1_len) vel = -vel;
     }
 
     void fillBG() {
@@ -891,6 +891,10 @@ class ScrollingText {
             fadeAll(230);
         }
         drawFastHLine(0, 25, MWIDTH, bg_color);
+    }
+
+    void setBgColor(CRGB col) {
+        this->bg_color = col;
     }
 };
 
